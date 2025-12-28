@@ -103,6 +103,13 @@
             // 数据来源：JASSO 2024年5月1日统计
             summary: { total: 33.67, yoyChange: 20.6, yoyChangePercent: 20.6 },
             trend: [
+                // 全部历史数据 (2013-2024)
+                { year: 2013, value: 13.57 },
+                { year: 2014, value: 18.42 },
+                { year: 2015, value: 20.83 },
+                { year: 2016, value: 23.95 },
+                { year: 2017, value: 26.77 },
+                { year: 2018, value: 29.87 },
                 { year: 2019, value: 31.22 },
                 { year: 2020, value: 27.94 },  // 疫情影响
                 { year: 2021, value: 24.26 },  // 疫情影响
@@ -134,6 +141,13 @@
             // 数据来源：出入国在留管理庁
             summary: { total: 33.67, yoyChange: 20.6 },
             trend: [
+                // 全部历史数据 (2013-2024)
+                { year: 2013, value: 19.34 },
+                { year: 2014, value: 21.45 },
+                { year: 2015, value: 24.68 },
+                { year: 2016, value: 27.72 },
+                { year: 2017, value: 31.12 },
+                { year: 2018, value: 33.73 },
                 { year: 2019, value: 34.59 },
                 { year: 2020, value: 28.06 },
                 { year: 2021, value: 20.80 },
@@ -147,6 +161,21 @@
             // 数据来源：総務省統計局 2024年11月
             summary: { current: 110.0, momChange: 0.4, yoyChange: 2.9 },
             trend: [
+                // 全部历史数据 (月度)
+                { month: '2019-12', value: 101.8 },
+                { month: '2020-06', value: 101.5 },
+                { month: '2020-12', value: 101.2 },
+                { month: '2021-06', value: 101.6 },
+                { month: '2021-12', value: 102.1 },
+                { month: '2022-06', value: 103.5 },
+                { month: '2022-12', value: 105.2 },
+                { month: '2023-06', value: 106.8 },
+                { month: '2023-12', value: 107.6 },
+                { month: '2024-01', value: 107.8 },
+                { month: '2024-02', value: 107.9 },
+                { month: '2024-03', value: 108.0 },
+                { month: '2024-04', value: 108.1 },
+                { month: '2024-05', value: 108.1 },
                 { month: '2024-06', value: 108.2 },
                 { month: '2024-07', value: 108.6 },
                 { month: '2024-08', value: 108.9 },
@@ -162,6 +191,21 @@
             // 数据来源：厚生労働省 2024年11月
             summary: { ratio: 1.25, trend: 'stable' },
             trend: [
+                // 全部历史数据 (月度)
+                { month: '2019-12', value: 1.57 },
+                { month: '2020-06', value: 1.11 },
+                { month: '2020-12', value: 1.06 },
+                { month: '2021-06', value: 1.13 },
+                { month: '2021-12', value: 1.16 },
+                { month: '2022-06', value: 1.27 },
+                { month: '2022-12', value: 1.35 },
+                { month: '2023-06', value: 1.30 },
+                { month: '2023-12', value: 1.27 },
+                { month: '2024-01', value: 1.27 },
+                { month: '2024-02', value: 1.26 },
+                { month: '2024-03', value: 1.28 },
+                { month: '2024-04', value: 1.26 },
+                { month: '2024-05', value: 1.24 },
                 { month: '2024-06', value: 1.24 },
                 { month: '2024-07', value: 1.24 },
                 { month: '2024-08', value: 1.24 },
@@ -180,6 +224,334 @@
             ]
         }
     };
+
+    /**
+     * 计算变化率
+     * @param {number} startValue - 起始值
+     * @param {number} endValue - 结束值
+     * @returns {number} 变化百分比
+     */
+    function calculateChange(startValue, endValue) {
+        if (!startValue || startValue === 0) return 0;
+        return ((endValue - startValue) / startValue * 100).toFixed(1);
+    }
+
+    /**
+     * 获取时间范围标签
+     * @param {string} range - 时间范围
+     * @returns {string} 中文标签
+     */
+    function getRangeLabel(range) {
+        const labels = {
+            '12m': '同比',
+            '5y': '5年变化',
+            'all': '累计变化'
+        };
+        return labels[range] || '同比';
+    }
+
+    /**
+     * 根据时间范围过滤数据并计算动态摘要（基于数据集的最新日期）
+     * @param {string} range - '12m' (近12个月), '5y' (近5年), 'all' (全部历史)
+     * @returns {object} 过滤后的数据副本，包含动态计算的摘要和洞察
+     */
+    function filterDataByTimeRange(range) {
+        // 深拷贝数据
+        const filtered = JSON.parse(JSON.stringify(OFFICIAL_DATA));
+
+        // 获取数据集中的最新时间点作为基准
+        const latestStudentYear = Math.max(...OFFICIAL_DATA.students.trend.map(d => d.year));
+        const latestVisaYear = Math.max(...OFFICIAL_DATA.visa.trend.map(d => d.year));
+
+        // 获取月度数据的最新月份
+        const getLatestMonth = (trend) => {
+            const dates = trend.map(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                return new Date(year, month - 1);
+            });
+            return new Date(Math.max(...dates));
+        };
+        const latestCPIDate = getLatestMonth(OFFICIAL_DATA.cpi.trend);
+        const latestJobsDate = getLatestMonth(OFFICIAL_DATA.jobs.trend);
+
+        // 根据时间范围过滤
+        if (range === '12m') {
+            // 近12个月/近2年：年度数据显示最近2年，月度数据显示最近12个月
+            const cutoffYearStudents = latestStudentYear - 1;
+            const cutoffYearVisa = latestVisaYear - 1;
+
+            // 过滤年度数据（最近2年）
+            filtered.students.trend = OFFICIAL_DATA.students.trend.filter(d => d.year >= cutoffYearStudents);
+            filtered.visa.trend = OFFICIAL_DATA.visa.trend.filter(d => d.year >= cutoffYearVisa);
+
+            // 计算月度数据的12个月前日期
+            const cutoffCPIDate = new Date(latestCPIDate);
+            cutoffCPIDate.setMonth(cutoffCPIDate.getMonth() - 12);
+            const cutoffJobsDate = new Date(latestJobsDate);
+            cutoffJobsDate.setMonth(cutoffJobsDate.getMonth() - 12);
+
+            // 过滤月度数据
+            filtered.cpi.trend = OFFICIAL_DATA.cpi.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffCPIDate;
+            });
+            filtered.jobs.trend = OFFICIAL_DATA.jobs.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffJobsDate;
+            });
+
+        } else if (range === '5y') {
+            // 近5年
+            const cutoffYearStudents = latestStudentYear - 4;  // 包含当前年共5年
+            const cutoffYearVisa = latestVisaYear - 4;
+
+            // 过滤年度数据
+            filtered.students.trend = OFFICIAL_DATA.students.trend.filter(d => d.year >= cutoffYearStudents);
+            filtered.visa.trend = OFFICIAL_DATA.visa.trend.filter(d => d.year >= cutoffYearVisa);
+
+            // 计算月度数据的5年前日期
+            const cutoffCPIDate = new Date(latestCPIDate);
+            cutoffCPIDate.setFullYear(cutoffCPIDate.getFullYear() - 5);
+            const cutoffJobsDate = new Date(latestJobsDate);
+            cutoffJobsDate.setFullYear(cutoffJobsDate.getFullYear() - 5);
+
+            // 过滤月度数据
+            filtered.cpi.trend = OFFICIAL_DATA.cpi.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffCPIDate;
+            });
+            filtered.jobs.trend = OFFICIAL_DATA.jobs.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffJobsDate;
+            });
+        }
+        // 'all' - 不需要过滤趋势数据
+
+        // ============ 动态计算摘要和洞察 ============
+        const rangeLabel = getRangeLabel(range);
+
+        // 学生数据动态摘要
+        if (filtered.students.trend.length >= 2) {
+            const first = filtered.students.trend[0];
+            const last = filtered.students.trend[filtered.students.trend.length - 1];
+            const change = calculateChange(first.value, last.value);
+            filtered.students.summary = {
+                ...filtered.students.summary,
+                change: parseFloat(change),
+                rangeLabel: rangeLabel
+            };
+            filtered.students.insight = `${last.year}年${last.value}万人，较${first.year}年${change >= 0 ? '增长' : '下降'}${Math.abs(change)}%`;
+        } else if (filtered.students.trend.length === 1) {
+            const item = filtered.students.trend[0];
+            filtered.students.summary = { ...filtered.students.summary, change: 0, rangeLabel: rangeLabel };
+            filtered.students.insight = `${item.year}年${item.value}万人`;
+        }
+
+        // 签证数据动态摘要
+        if (filtered.visa.trend.length >= 2) {
+            const first = filtered.visa.trend[0];
+            const last = filtered.visa.trend[filtered.visa.trend.length - 1];
+            const change = calculateChange(first.value, last.value);
+            filtered.visa.summary = {
+                ...filtered.visa.summary,
+                change: parseFloat(change),
+                rangeLabel: rangeLabel
+            };
+            filtered.visa.insight = `在留留学生${last.value}万，较${first.year}年${change >= 0 ? '增长' : '下降'}${Math.abs(change)}%`;
+        } else if (filtered.visa.trend.length === 1) {
+            const item = filtered.visa.trend[0];
+            filtered.visa.summary = { ...filtered.visa.summary, change: 0, rangeLabel: rangeLabel };
+            filtered.visa.insight = `在留留学生${item.value}万`;
+        }
+
+        // CPI数据动态摘要
+        if (filtered.cpi.trend.length >= 2) {
+            const first = filtered.cpi.trend[0];
+            const last = filtered.cpi.trend[filtered.cpi.trend.length - 1];
+            const change = calculateChange(first.value, last.value);
+            filtered.cpi.summary = {
+                ...filtered.cpi.summary,
+                change: parseFloat(change),
+                rangeLabel: rangeLabel
+            };
+            filtered.cpi.insight = `${last.month} CPI ${last.value}，较${first.month}上涨${Math.abs(change)}%`;
+        } else if (filtered.cpi.trend.length === 1) {
+            const item = filtered.cpi.trend[0];
+            filtered.cpi.summary = { ...filtered.cpi.summary, change: 0, rangeLabel: rangeLabel };
+            filtered.cpi.insight = `${item.month} CPI ${item.value}`;
+        }
+
+        // 就业数据动态摘要
+        if (filtered.jobs.trend.length >= 2) {
+            const first = filtered.jobs.trend[0];
+            const last = filtered.jobs.trend[filtered.jobs.trend.length - 1];
+            const change = (last.value - first.value).toFixed(2);
+            const changePercent = calculateChange(first.value, last.value);
+            filtered.jobs.summary = {
+                ...filtered.jobs.summary,
+                change: parseFloat(changePercent),
+                rangeLabel: rangeLabel
+            };
+            if (Math.abs(change) < 0.05) {
+                filtered.jobs.insight = `求人倍率${last.value}倍，保持平稳`;
+            } else {
+                filtered.jobs.insight = `求人倍率${last.value}倍，较${first.month}${change >= 0 ? '上升' : '下降'}${Math.abs(change)}`;
+            }
+        } else if (filtered.jobs.trend.length === 1) {
+            const item = filtered.jobs.trend[0];
+            filtered.jobs.summary = { ...filtered.jobs.summary, change: 0, rangeLabel: rangeLabel };
+            filtered.jobs.insight = `求人倍率${item.value}倍`;
+        }
+
+        return filtered;
+    }
+
+    /**
+     * 根据时间范围过滤数据并计算动态摘要（支持外部传入数据）
+     * @param {string} range - '12m' (近12个月), '5y' (近5年), 'all' (全部历史)
+     * @param {object} sourceData - 外部传入的数据对象
+     * @returns {object} 过滤后的数据副本，包含动态计算的摘要和洞察
+     */
+    function filterDataByTimeRangeWithData(range, sourceData) {
+        // 深拷贝数据
+        const filtered = JSON.parse(JSON.stringify(sourceData));
+
+        // 获取数据集中的最新时间点作为基准
+        const latestStudentYear = Math.max(...sourceData.students.trend.map(d => d.year));
+        const latestVisaYear = Math.max(...sourceData.visa.trend.map(d => d.year));
+
+        // 获取月度数据的最新月份
+        const getLatestMonth = (trend) => {
+            if (!trend || trend.length === 0) return new Date();
+            const dates = trend.map(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                return new Date(year, month - 1);
+            });
+            return new Date(Math.max(...dates));
+        };
+        const latestCPIDate = getLatestMonth(sourceData.cpi.trend);
+        const latestJobsDate = getLatestMonth(sourceData.jobs.trend);
+
+        // 根据时间范围过滤
+        if (range === '12m') {
+            const cutoffYearStudents = latestStudentYear - 1;
+            const cutoffYearVisa = latestVisaYear - 1;
+
+            filtered.students.trend = sourceData.students.trend.filter(d => d.year >= cutoffYearStudents);
+            filtered.visa.trend = sourceData.visa.trend.filter(d => d.year >= cutoffYearVisa);
+
+            const cutoffCPIDate = new Date(latestCPIDate);
+            cutoffCPIDate.setMonth(cutoffCPIDate.getMonth() - 12);
+            const cutoffJobsDate = new Date(latestJobsDate);
+            cutoffJobsDate.setMonth(cutoffJobsDate.getMonth() - 12);
+
+            filtered.cpi.trend = sourceData.cpi.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffCPIDate;
+            });
+            filtered.jobs.trend = sourceData.jobs.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffJobsDate;
+            });
+
+        } else if (range === '5y') {
+            const cutoffYearStudents = latestStudentYear - 4;
+            const cutoffYearVisa = latestVisaYear - 4;
+
+            filtered.students.trend = sourceData.students.trend.filter(d => d.year >= cutoffYearStudents);
+            filtered.visa.trend = sourceData.visa.trend.filter(d => d.year >= cutoffYearVisa);
+
+            const cutoffCPIDate = new Date(latestCPIDate);
+            cutoffCPIDate.setFullYear(cutoffCPIDate.getFullYear() - 5);
+            const cutoffJobsDate = new Date(latestJobsDate);
+            cutoffJobsDate.setFullYear(cutoffJobsDate.getFullYear() - 5);
+
+            filtered.cpi.trend = sourceData.cpi.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffCPIDate;
+            });
+            filtered.jobs.trend = sourceData.jobs.trend.filter(d => {
+                const [year, month] = d.month.split('-').map(Number);
+                const date = new Date(year, month - 1);
+                return date >= cutoffJobsDate;
+            });
+        }
+
+        // 动态计算摘要和洞察
+        const rangeLabel = getRangeLabel(range);
+
+        // 复制 source 字段
+        filtered.students.source = sourceData.students.source;
+        filtered.visa.source = sourceData.visa.source;
+        filtered.cpi.source = sourceData.cpi.source;
+        filtered.jobs.source = sourceData.jobs.source;
+
+        // 学生数据动态摘要
+        if (filtered.students.trend.length >= 2) {
+            const first = filtered.students.trend[0];
+            const last = filtered.students.trend[filtered.students.trend.length - 1];
+            const change = calculateChange(first.value, last.value);
+            filtered.students.summary = { ...filtered.students.summary, change: parseFloat(change), rangeLabel };
+            filtered.students.insight = `${last.year}年${last.value}万人，较${first.year}年${change >= 0 ? '增长' : '下降'}${Math.abs(change)}%`;
+        } else if (filtered.students.trend.length === 1) {
+            const item = filtered.students.trend[0];
+            filtered.students.summary = { ...filtered.students.summary, change: 0, rangeLabel };
+            filtered.students.insight = `${item.year}年${item.value}万人`;
+        }
+
+        // 签证数据动态摘要
+        if (filtered.visa.trend.length >= 2) {
+            const first = filtered.visa.trend[0];
+            const last = filtered.visa.trend[filtered.visa.trend.length - 1];
+            const change = calculateChange(first.value, last.value);
+            filtered.visa.summary = { ...filtered.visa.summary, change: parseFloat(change), rangeLabel };
+            filtered.visa.insight = `在留留学生${last.value}万，较${first.year}年${change >= 0 ? '增长' : '下降'}${Math.abs(change)}%`;
+        } else if (filtered.visa.trend.length === 1) {
+            const item = filtered.visa.trend[0];
+            filtered.visa.summary = { ...filtered.visa.summary, change: 0, rangeLabel };
+            filtered.visa.insight = `在留留学生${item.value}万`;
+        }
+
+        // CPI数据动态摘要
+        if (filtered.cpi.trend.length >= 2) {
+            const first = filtered.cpi.trend[0];
+            const last = filtered.cpi.trend[filtered.cpi.trend.length - 1];
+            const change = calculateChange(first.value, last.value);
+            filtered.cpi.summary = { ...filtered.cpi.summary, change: parseFloat(change), rangeLabel };
+            filtered.cpi.insight = `${last.month} CPI ${last.value}，较${first.month}上涨${Math.abs(change)}%`;
+        } else if (filtered.cpi.trend.length === 1) {
+            const item = filtered.cpi.trend[0];
+            filtered.cpi.summary = { ...filtered.cpi.summary, change: 0, rangeLabel };
+            filtered.cpi.insight = `${item.month} CPI ${item.value}`;
+        }
+
+        // 就业数据动态摘要
+        if (filtered.jobs.trend.length >= 2) {
+            const first = filtered.jobs.trend[0];
+            const last = filtered.jobs.trend[filtered.jobs.trend.length - 1];
+            const change = (last.value - first.value).toFixed(2);
+            const changePercent = calculateChange(first.value, last.value);
+            filtered.jobs.summary = { ...filtered.jobs.summary, change: parseFloat(changePercent), rangeLabel };
+            if (Math.abs(change) < 0.05) {
+                filtered.jobs.insight = `求人倍率${last.value}倍，保持平稳`;
+            } else {
+                filtered.jobs.insight = `求人倍率${last.value}倍，较${first.month}${change >= 0 ? '上升' : '下降'}${Math.abs(change)}`;
+            }
+        } else if (filtered.jobs.trend.length === 1) {
+            const item = filtered.jobs.trend[0];
+            filtered.jobs.summary = { ...filtered.jobs.summary, change: 0, rangeLabel };
+            filtered.jobs.insight = `求人倍率${item.value}倍`;
+        }
+
+        return filtered;
+    }
 
     /**
      * 初始化
@@ -272,23 +644,103 @@
     }
 
     /**
+     * 从 API 获取时序数据并转换格式
+     */
+    async function fetchAPIData() {
+        try {
+            // 根据时间范围确定请求的年份数
+            const yearsMap = { '12m': 2, '5y': 5, 'all': 15 };
+            const years = yearsMap[currentTimeRange] || 5;
+
+            // 并行请求多个指标的时序数据
+            const [studentsRes, cpiRes, jobsRes] = await Promise.all([
+                TrendAPI.getIndicatorSeries('students_total', years),
+                TrendAPI.getIndicatorSeries('cpi_total', years),
+                TrendAPI.getIndicatorSeries('job_ratio', years)
+            ]);
+
+            const apiData = {};
+
+            // 转换学生数据格式
+            if (studentsRes.success && studentsRes.data?.series) {
+                apiData.students = {
+                    summary: OFFICIAL_DATA.students.summary,
+                    trend: studentsRes.data.series.map(d => ({
+                        year: parseInt(d.time_period),
+                        value: d.value
+                    })),
+                    insight: OFFICIAL_DATA.students.insight,
+                    byNationality: OFFICIAL_DATA.students.byNationality,
+                    bySchoolType: OFFICIAL_DATA.students.bySchoolType,
+                    source: 'JASSO'
+                };
+            }
+
+            // 转换 CPI 数据格式
+            if (cpiRes.success && cpiRes.data?.series) {
+                apiData.cpi = {
+                    summary: OFFICIAL_DATA.cpi.summary,
+                    trend: cpiRes.data.series.map(d => ({
+                        month: d.time_period,
+                        value: d.value
+                    })),
+                    insight: OFFICIAL_DATA.cpi.insight,
+                    coreCPI: OFFICIAL_DATA.cpi.coreCPI,
+                    source: '総務省統計局'
+                };
+            }
+
+            // 转换就业数据格式
+            if (jobsRes.success && jobsRes.data?.series) {
+                apiData.jobs = {
+                    summary: OFFICIAL_DATA.jobs.summary,
+                    trend: jobsRes.data.series.map(d => ({
+                        month: d.time_period,
+                        value: d.value
+                    })),
+                    insight: OFFICIAL_DATA.jobs.insight,
+                    byPrefecture: OFFICIAL_DATA.jobs.byPrefecture,
+                    source: '厚生労働省'
+                };
+            }
+
+            console.log('API data loaded successfully');
+            return apiData;
+        } catch (error) {
+            console.warn('Failed to fetch API data, using static data:', error);
+            return null;
+        }
+    }
+
+    /**
      * 加载所有数据并渲染
      */
     async function loadAndRenderAll() {
         try {
-            // 尝试从 API 加载数据
-            // const [students, visa, cpi, jobs] = await Promise.all([
-            //     TrendAPI.getStudentsData(currentTimeRange),
-            //     TrendAPI.getVisaData(currentTimeRange),
-            //     TrendAPI.getCPIData(currentTimeRange),
-            //     TrendAPI.getJobsData(currentTimeRange)
-            // ]);
+            // 优先尝试从 API 获取数据
+            const apiData = await fetchAPIData();
 
-            // 使用官方统计数据
-            const students = OFFICIAL_DATA.students;
-            const visa = OFFICIAL_DATA.visa;
-            const cpi = OFFICIAL_DATA.cpi;
-            const jobs = OFFICIAL_DATA.jobs;
+            // 合并 API 数据和静态数据，API 数据优先
+            const mergedData = {
+                students: apiData?.students || OFFICIAL_DATA.students,
+                visa: OFFICIAL_DATA.visa,  // 签证数据暂无 API，使用静态数据
+                cpi: apiData?.cpi || OFFICIAL_DATA.cpi,
+                jobs: apiData?.jobs || OFFICIAL_DATA.jobs
+            };
+
+            // 添加数据来源标识
+            mergedData.students.source = mergedData.students.source || 'JASSO';
+            mergedData.visa.source = '出入国在留管理庁';
+            mergedData.cpi.source = mergedData.cpi.source || '総務省統計局';
+            mergedData.jobs.source = mergedData.jobs.source || '厚生労働省';
+
+            // 根据时间范围过滤数据（使用合并后的数据）
+            const filteredData = filterDataByTimeRangeWithData(currentTimeRange, mergedData);
+
+            const students = filteredData.students;
+            const visa = filteredData.visa;
+            const cpi = filteredData.cpi;
+            const jobs = filteredData.jobs;
 
             // 渲染核心指标卡片
             renderMetricCard('students', students);
@@ -376,7 +828,7 @@
 
         if (!valueEl || !data.summary) return;
 
-        // 更新数值
+        // 更新数值（始终显示最新值）
         if (type === 'students' || type === 'visa') {
             valueEl.textContent = data.summary.total || '--';
         } else if (type === 'cpi') {
@@ -385,14 +837,18 @@
             valueEl.textContent = data.summary.ratio || '--';
         }
 
-        // 更新变化
+        // 更新变化率（优先使用动态计算的 change，否则使用原有的 yoyChange）
         if (changeEl) {
-            const change = data.summary.yoyChange || data.summary.yoyChangePercent || 0;
+            const change = data.summary.change !== undefined
+                ? data.summary.change
+                : (data.summary.yoyChange || data.summary.yoyChangePercent || 0);
             const isPositive = change >= 0;
+            const rangeLabel = data.summary.rangeLabel || '同比';
 
-            changeEl.className = `metric-change ${isPositive ? 'positive' : 'negative'}`;
-            changeEl.querySelector('.arrow').textContent = isPositive ? '↑' : '↓';
+            changeEl.className = `metric-change ${isPositive ? 'positive' : (change < 0 ? 'negative' : 'neutral')}`;
+            changeEl.querySelector('.arrow').textContent = isPositive ? '↑' : (change < 0 ? '↓' : '→');
             changeEl.querySelector('.percent').textContent = `${Math.abs(change)}%`;
+            changeEl.querySelector('.period').textContent = rangeLabel;
         }
 
         // 更新洞察

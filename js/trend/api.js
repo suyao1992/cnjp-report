@@ -4,10 +4,10 @@
 
 const TrendAPI = (function () {
     // API 端点配置
-    // 开发环境使用本地 Worker，生产环境使用 Cloudflare Worker
-    const API_BASE = window.location.hostname === 'localhost'
-        ? 'http://localhost:8787'  // 本地开发
-        : 'https://estat-api.suyao1992.workers.dev';  // 生产环境
+    // 始终使用生产环境的 Cloudflare Worker
+    // 如需本地开发调试，可运行 wrangler dev 并取消下面注释
+    const API_BASE = 'https://estat-api.suyao1992.workers.dev';
+    // const API_BASE = 'http://localhost:8787';  // 本地开发（需运行 wrangler dev）
 
     // 缓存配置
     const CACHE_PREFIX = 'trend_cache_';
