@@ -247,7 +247,7 @@ const ChartConfigs = {
             xAxis: {
                 type: 'category',
                 name: '年份',
-                data: ['2005', '2008', '2011', '2014', '2017', '2020', '2021', '2022', '2024'],
+                data: ['2005', '2010', '2015', '2020', '2021', '2022', '2023', '2024'],
                 axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } },
                 axisLabel: { color: '#8b949e' }
             },
@@ -264,7 +264,7 @@ const ChartConfigs = {
                 {
                     name: '开放初期萌芽(05-10)',
                     type: 'line',
-                    data: [3.5, 4.2, null, null, null, null, null, null, null],
+                    data: [3.5, 5.0, null, null, null, null, null, null],
                     symbol: 'circle',
                     symbolSize: 8,
                     itemStyle: { color: '#87CEEB' },
@@ -273,7 +273,7 @@ const ChartConfigs = {
                 {
                     name: '知名度扩展期(11-15)',
                     type: 'line',
-                    data: [null, null, 5.0, 5.8, 6.75, null, null, null, null],
+                    data: [null, 5.0, 6.75, null, null, null, null, null],
                     symbol: 'circle',
                     symbolSize: 8,
                     itemStyle: { color: '#1e3a5f' },
@@ -282,7 +282,7 @@ const ChartConfigs = {
                 {
                     name: '互联网传播期(16-20)',
                     type: 'line',
-                    data: [null, null, null, null, 6.75, 8.5, null, null, null],
+                    data: [null, null, 6.75, 8.5, null, null, null, null],
                     symbol: 'circle',
                     symbolSize: 8,
                     itemStyle: { color: '#2d8f4e' },
@@ -291,7 +291,7 @@ const ChartConfigs = {
                 {
                     name: '爆发增长期(21-24)',
                     type: 'line',
-                    data: [null, null, null, null, null, null, 10.855, 11, 14.572],
+                    data: [null, null, null, 8.5, 10.855, 10.855, 11.56, 14.572],
                     symbol: 'circle',
                     symbolSize: 8,
                     itemStyle: { color: '#e74c3c' },
@@ -495,7 +495,7 @@ const ChartConfigs = {
                 {
                     name: '高速增长期',
                     type: 'line',
-                    data: [null, null, null, null, null, 9.5, 10.2, 10.4, 12.44, null, null, null, null, null],
+                    data: [null, null, null, null, 8.5, 9.5, 10.2, 10.4, 12.44, null, null, null, null, null],
                     symbol: 'circle',
                     symbolSize: 6,
                     itemStyle: { color: '#2d8f4e' },
@@ -510,7 +510,7 @@ const ChartConfigs = {
                 {
                     name: '疫情冲击期',
                     type: 'line',
-                    data: [null, null, null, null, null, null, null, null, 12.44, 11.69, 11.4, null, null, null],
+                    data: [null, null, null, null, null, null, null, null, 12.44, 11.69, 11.4, 10.39, null, null],
                     symbol: 'circle',
                     symbolSize: 6,
                     itemStyle: { color: '#e74c3c' },
