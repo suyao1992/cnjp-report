@@ -107,28 +107,63 @@ const TrendAPI = (function () {
     // 公开 API 方法
     return {
         /**
-         * 获取留学生数据
+         * 获取 Dashboard 概览数据（新 API）
+         */
+        getDashboardOverview: async function () {
+            return await fetchWithCache('/api/v1/dashboard/overview');
+        },
+
+        /**
+         * 获取同步状态
+         */
+        getSyncStatus: async function () {
+            return await fetchAPI('/api/v1/meta/last-sync');
+        },
+
+        /**
+         * 获取所有指标列表
+         */
+        getAllIndicators: async function () {
+            return await fetchWithCache('/api/v1/indicators');
+        },
+
+        /**
+         * 获取单个指标最新值
+         */
+        getIndicator: async function (indicatorId) {
+            return await fetchWithCache(`/api/v1/indicators/${indicatorId}`);
+        },
+
+        /**
+         * 获取单个指标时序数据
+         */
+        getIndicatorSeries: async function (indicatorId, years = 5) {
+            return await fetchWithCache(`/api/v1/indicators/${indicatorId}/series`, { years });
+        },
+
+        /**
+         * 获取留学生数据（兼容旧方法）
          */
         getStudentsData: async function (timeRange = '5y') {
             return await fetchWithCache('/api/stats/students', { range: timeRange });
         },
 
         /**
-         * 获取签证数据
+         * 获取签证数据（兼容旧方法）
          */
         getVisaData: async function (timeRange = '5y') {
             return await fetchWithCache('/api/stats/visa', { range: timeRange });
         },
 
         /**
-         * 获取CPI数据
+         * 获取CPI数据（兼容旧方法）
          */
         getCPIData: async function (timeRange = '5y') {
             return await fetchWithCache('/api/stats/cpi', { range: timeRange });
         },
 
         /**
-         * 获取就业市场数据
+         * 获取就业市场数据（兼容旧方法）
          */
         getJobsData: async function (timeRange = '5y') {
             return await fetchWithCache('/api/stats/jobs', { range: timeRange });

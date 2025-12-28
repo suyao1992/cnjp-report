@@ -232,8 +232,7 @@
     async function renderMacroIndicators() {
         try {
             // 从 API 获取宏观数据
-            const response = await fetch('https://estat-api.suyao1992.workers.dev/api/v1/dashboard/overview');
-            const result = await response.json();
+            const result = await TrendAPI.getDashboardOverview();
 
             if (result.success && result.data?.indicators) {
                 const indicators = result.data.indicators;
@@ -884,8 +883,7 @@
 
         try {
             // 从 API 获取同步状态
-            const response = await fetch('https://estat-api.suyao1992.workers.dev/api/v1/meta/last-sync');
-            const result = await response.json();
+            const result = await TrendAPI.getSyncStatus();
 
             if (result.success && result.data) {
                 const { lastSyncTime, nextSyncTime, lastSyncLog } = result.data;
