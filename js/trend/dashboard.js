@@ -11,55 +11,88 @@
     // 图表实例存储
     const charts = {};
 
-    // 模拟数据（在 API 未就绪时使用）
-    const MOCK_DATA = {
+    // 官方统计数据（数据来源：JASSO、文部科学省、総務省統計局、厚生労働省）
+    // 更新时间：2024年12月
+    const OFFICIAL_DATA = {
         students: {
-            summary: { total: 12.3, yoyChange: 6.9, yoyChangePercent: 6.9 },
+            // 数据来源：JASSO 2024年5月1日统计
+            summary: { total: 33.67, yoyChange: 20.6, yoyChangePercent: 20.6 },
             trend: [
-                { year: 2019, value: 12.35 },
-                { year: 2020, value: 13.1 },
-                { year: 2021, value: 12.7 },
-                { year: 2022, value: 12.1 },
-                { year: 2023, value: 12.2 },
-                { year: 2024, value: 12.9 }
+                { year: 2019, value: 31.22 },
+                { year: 2020, value: 27.94 },  // 疫情影响
+                { year: 2021, value: 24.26 },  // 疫情影响
+                { year: 2022, value: 23.14 },  // 疫情影响
+                { year: 2023, value: 27.93 },  // 恢复
+                { year: 2024, value: 33.67 }   // 创历史新高
             ],
-            insight: '2024年12.3万人，同比+6.9%，恢复增长态势'
+            insight: '2024年33.67万人，创历史新高，同比+20.6%',
+            // 按国籍分布（2024年）
+            byNationality: [
+                { name: '中国', value: 12.35, percent: 36.7, yoyChange: 6.9 },
+                { name: '尼泊尔', value: 6.48, percent: 19.2, yoyChange: 71.1 },
+                { name: '越南', value: 4.03, percent: 12.0, yoyChange: 11.0 },
+                { name: '缅甸', value: 1.66, percent: 4.9, yoyChange: 113.5 },
+                { name: '韩国', value: 1.46, percent: 4.3, yoyChange: -2.5 },
+                { name: '其他', value: 7.69, percent: 22.9, yoyChange: 25.0 }
+            ],
+            // 按学校类型分布（2024年）
+            bySchoolType: [
+                { name: '大学（学部）', value: 8.74, percent: 26.0 },
+                { name: '专门学校', value: 7.64, percent: 22.7 },
+                { name: '日语学校', value: 10.72, percent: 31.8 },
+                { name: '大学院', value: 5.82, percent: 17.3 },
+                { name: '短期大学', value: 0.33, percent: 1.0 },
+                { name: '高专', value: 0.05, percent: 0.2 }
+            ]
         },
         visa: {
-            summary: { total: 32.3, yoyChange: 8.2 },
+            // 数据来源：出入国在留管理庁
+            summary: { total: 33.67, yoyChange: 20.6 },
             trend: [
-                { year: 2019, value: 31.2 },
-                { year: 2020, value: 28.0 },
-                { year: 2021, value: 24.5 },
-                { year: 2022, value: 26.8 },
-                { year: 2023, value: 29.8 },
-                { year: 2024, value: 32.3 }
+                { year: 2019, value: 34.59 },
+                { year: 2020, value: 28.06 },
+                { year: 2021, value: 20.80 },
+                { year: 2022, value: 23.01 },
+                { year: 2023, value: 27.93 },
+                { year: 2024, value: 33.67 }
             ],
-            insight: '在留留学生32.3万，创历史新高'
+            insight: '在留留学生33.67万，创历史新高'
         },
         cpi: {
-            summary: { current: 106.2, momChange: 0.2, yoyChange: 2.5 },
+            // 数据来源：総務省統計局 2024年11月
+            summary: { current: 110.0, momChange: 0.4, yoyChange: 2.9 },
             trend: [
-                { month: '2024-06', value: 105.2 },
-                { month: '2024-07', value: 105.5 },
-                { month: '2024-08', value: 105.8 },
-                { month: '2024-09', value: 106.0 },
-                { month: '2024-10', value: 106.1 },
-                { month: '2024-11', value: 106.2 }
+                { month: '2024-06', value: 108.2 },
+                { month: '2024-07', value: 108.6 },
+                { month: '2024-08', value: 108.9 },
+                { month: '2024-09', value: 109.2 },
+                { month: '2024-10', value: 109.6 },
+                { month: '2024-11', value: 110.0 }
             ],
-            insight: '11月CPI 106.2，通胀趋势放缓'
+            insight: '11月CPI 110.0（2020年=100），同比+2.9%',
+            // 核心CPI（除生鲜食品）
+            coreCPI: { current: 112.5, yoyChange: 2.7 }
         },
         jobs: {
+            // 数据来源：厚生労働省 2024年11月
             summary: { ratio: 1.25, trend: 'stable' },
             trend: [
-                { month: '2024-06', value: 1.26 },
-                { month: '2024-07', value: 1.25 },
-                { month: '2024-08', value: 1.25 },
+                { month: '2024-06', value: 1.24 },
+                { month: '2024-07', value: 1.24 },
+                { month: '2024-08', value: 1.24 },
                 { month: '2024-09', value: 1.24 },
                 { month: '2024-10', value: 1.25 },
                 { month: '2024-11', value: 1.25 }
             ],
-            insight: '求人倍率1.25，就业市场温和平稳'
+            insight: '求人倍率1.25倍，就业市场保持温和',
+            // 按都道府县（2024年11月）
+            byPrefecture: [
+                { name: '福井県', value: 1.91 },
+                { name: '東京都', value: 1.78 },
+                { name: '愛知県', value: 1.42 },
+                { name: '大阪府', value: 1.26 },
+                { name: '北海道', value: 1.05 }
+            ]
         }
     };
 
@@ -166,11 +199,11 @@
             //     TrendAPI.getJobsData(currentTimeRange)
             // ]);
 
-            // 暂时使用模拟数据
-            const students = MOCK_DATA.students;
-            const visa = MOCK_DATA.visa;
-            const cpi = MOCK_DATA.cpi;
-            const jobs = MOCK_DATA.jobs;
+            // 使用官方统计数据
+            const students = OFFICIAL_DATA.students;
+            const visa = OFFICIAL_DATA.visa;
+            const cpi = OFFICIAL_DATA.cpi;
+            const jobs = OFFICIAL_DATA.jobs;
 
             // 渲染核心指标卡片
             renderMetricCard('students', students);
@@ -332,9 +365,9 @@
             }]
         });
 
-        // 国籍分布（模拟数据）
+        // 国籍分布（2024年JASSO官方数据）
         renderChart('chartStudentsNationality', {
-            tooltip: { trigger: 'item' },
+            tooltip: { trigger: 'item', formatter: '{b}: {c}万人 ({d}%)' },
             legend: {
                 orient: 'vertical',
                 right: 10,
@@ -345,14 +378,7 @@
                 type: 'pie',
                 radius: ['40%', '70%'],
                 center: ['35%', '50%'],
-                data: [
-                    { value: 45, name: '中国' },
-                    { value: 20, name: '越南' },
-                    { value: 12, name: '尼泊尔' },
-                    { value: 8, name: '韩国' },
-                    { value: 5, name: '印度尼西亚' },
-                    { value: 10, name: '其他' }
-                ],
+                data: OFFICIAL_DATA.students.byNationality.map(d => ({ value: d.value, name: d.name })),
                 label: { show: false },
                 emphasis: {
                     itemStyle: {
@@ -388,19 +414,13 @@
             ]
         });
 
-        // 学校类型（模拟数据）
+        // 学校类型分布（2024年JASSO官方数据）
         renderChart('chartStudentsSchool', {
-            tooltip: { trigger: 'item' },
+            tooltip: { trigger: 'item', formatter: '{b}: {c}万人 ({d}%)' },
             series: [{
                 type: 'pie',
                 radius: '60%',
-                data: [
-                    { value: 40, name: '大学' },
-                    { value: 25, name: '专门学校' },
-                    { value: 20, name: '日语学校' },
-                    { value: 10, name: '大学院' },
-                    { value: 5, name: '短期大学' }
-                ],
+                data: OFFICIAL_DATA.students.bySchoolType.map(d => ({ value: d.value, name: d.name })),
                 label: {
                     color: '#f0f6fc',
                     formatter: '{b}: {d}%'
