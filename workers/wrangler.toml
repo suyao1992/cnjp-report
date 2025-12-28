@@ -1,0 +1,15 @@
+name = "estat-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+# e-stat API 基础URL
+ESTAT_API_BASE = "https://api.e-stat.go.jp/rest/3.0/app"
+
+# 注意: ESTAT_APP_ID 应该通过 wrangler secret put ESTAT_APP_ID 设置
+# 不要在这里明文写入
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-namespace-id"
+# 部署前需要创建 KV namespace: wrangler kv:namespace create "CACHE"
