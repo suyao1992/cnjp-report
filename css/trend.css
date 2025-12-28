@@ -79,9 +79,56 @@
     gap: var(--spacing-lg);
     font-size: 0.8rem;
     color: var(--text-muted);
+    align-items: center;
 }
 
-.update-time span {
+.sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
+}
+
+.sync-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.sync-status.success .sync-dot {
+    background: var(--status-success);
+    animation: none;
+}
+
+.sync-status.warning .sync-dot {
+    background: var(--status-warning);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.sync-status.error .sync-dot {
+    background: var(--status-danger);
+    animation: none;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.update-time span,
+.next-update span {
     color: var(--accent-gold);
 }
 

@@ -814,12 +814,64 @@
     }
 
     /**
-     * 更新时间戳
+     * 更新同步状态
      */
-    function updateTimestamp() {
-        const el = document.getElementById('lastUpdate');
-        if (el) {
-            el.textContent = new Date().toLocaleString('zh-CN');
+    async function updateTimestamp() {
+        const statusEl = document.getElementById('syncStatus');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        const nextUpdateEl = document.getElementById('nextUpdate');
+        const syncTextEl = statusEl?.querySelector('.sync-text');
+
+        if (!statusEl) return;
+
+        try {
+            // 从 API 获取同步状态
+            const response = await fetch('https://estat-api.suyao1992.workers.dev/api/v1/meta/last-sync');
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                const { lastSyncTime, nextSyncTime, lastSyncLog } = result.data;
+
+                // 更新最后同步时间
+                if (lastSyncTime && lastUpdateEl) {
+                    const date = new Date(lastSyncTime);
+                    lastUpdateEl.textContent = date.toLocaleString('zh-CN', {
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+
+                // 更新下次同步时间
+                if (nextSyncTime && nextUpdateEl) {
+                    const nextDate = new Date(nextSyncTime);
+                    nextUpdateEl.textContent = nextDate.toLocaleString('zh-CN', {
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+
+                // 更新同步状态
+                if (lastSyncLog) {
+                    if (lastSyncLog.status === 'success') {
+                        statusEl.className = 'sync-status success';
+                        syncTextEl.textContent = '数据正常';
+                    } else if (lastSyncLog.status === 'partial') {
+                        statusEl.className = 'sync-status warning';
+                        syncTextEl.textContent = '部分更新';
+                    } else {
+                        statusEl.className = 'sync-status error';
+                        syncTextEl.textContent = '同步失败';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch sync status:', error);
+            statusEl.className = 'sync-status warning';
+            syncTextEl.textContent = '离线模式';
         }
     }
 

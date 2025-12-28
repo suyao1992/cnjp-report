@@ -60,8 +60,12 @@
                         <button class="time-btn" data-range="all">全部历史</button>
                     </div>
                     <div class="data-info">
-                        <span class="update-time">数据更新: <span id="lastUpdate">--</span></span>
-                        <span class="data-source">来源: 日本政府统计 e-Stat</span>
+                        <span class="sync-status" id="syncStatus">
+                            <span class="sync-dot"></span>
+                            <span class="sync-text">检查中...</span>
+                        </span>
+                        <span class="update-time">更新于: <span id="lastUpdate">--</span></span>
+                        <span class="next-update">下次更新: <span id="nextUpdate">--</span></span>
                     </div>
                 </div>
             </div>
