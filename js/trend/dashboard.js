@@ -11,6 +11,91 @@
     // 图表实例存储
     const charts = {};
 
+    // Toast 图标
+    const TOAST_ICONS = {
+        error: '❌',
+        warning: '⚠️',
+        success: '✅',
+        info: 'ℹ️'
+    };
+
+    // Toast 标题
+    const TOAST_TITLES = {
+        error: '错误',
+        warning: '警告',
+        success: '成功',
+        info: '提示'
+    };
+
+    /**
+     * 显示 Toast 通知
+     */
+    function showToast(message, type = 'info', duration = 5000) {
+        // 确保容器存在
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        // 创建 Toast
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <span class="toast-icon">${TOAST_ICONS[type]}</span>
+            <div class="toast-content">
+                <div class="toast-title">${TOAST_TITLES[type]}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close">×</button>
+        `;
+
+        // 关闭按钮
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            dismissToast(toast);
+        });
+
+        container.appendChild(toast);
+
+        // 自动关闭
+        if (duration > 0) {
+            setTimeout(() => dismissToast(toast), duration);
+        }
+
+        return toast;
+    }
+
+    /**
+     * 关闭 Toast
+     */
+    function dismissToast(toast) {
+        if (!toast || toast.classList.contains('hiding')) return;
+        toast.classList.add('hiding');
+        setTimeout(() => toast.remove(), 300);
+    }
+
+    /**
+     * 显示错误消息（快捷方法）
+     */
+    function showError(message) {
+        return showToast(message, 'error', 8000);
+    }
+
+    /**
+     * 显示警告消息（快捷方法）
+     */
+    function showWarning(message) {
+        return showToast(message, 'warning', 6000);
+    }
+
+    /**
+     * 显示成功消息（快捷方法）
+     */
+    function showSuccess(message) {
+        return showToast(message, 'success', 4000);
+    }
+
     // 官方统计数据（数据来源：JASSO、文部科学省、総務省統計局、厚生労働省）
     // 更新时间：2024年12月
     const OFFICIAL_DATA = {

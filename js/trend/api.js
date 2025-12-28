@@ -13,27 +13,84 @@ const TrendAPI = (function () {
     const CACHE_PREFIX = 'trend_cache_';
     const CACHE_TTL = 30 * 60 * 1000; // 30分钟
 
+    // 错误类型
+    const ERROR_TYPES = {
+        NETWORK: 'network',
+        TIMEOUT: 'timeout',
+        SERVER: 'server',
+        UNKNOWN: 'unknown'
+    };
+
+    // 用户友好的错误信息
+    const ERROR_MESSAGES = {
+        network: '网络连接失败，请检查网络设置',
+        timeout: '请求超时，服务器响应过慢',
+        server: '服务暂时不可用，请稍后重试',
+        unknown: '发生未知错误，请刷新页面重试'
+    };
+
     /**
-     * 发起 API 请求
+     * 发起 API 请求（带超时和重试）
      */
-    async function fetchAPI(endpoint, params = {}) {
+    async function fetchAPI(endpoint, params = {}, options = {}) {
         const url = new URL(`${API_BASE}${endpoint}`);
         Object.entries(params).forEach(([key, value]) => {
             url.searchParams.append(key, value);
         });
 
-        try {
-            const response = await fetch(url.toString());
+        const timeout = options.timeout || 10000; // 默认10秒超时
+        const maxRetries = options.retries || 2;  // 默认重试2次
 
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
+        let lastError;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+            try {
+                const response = await fetch(url.toString(), {
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw { type: ERROR_TYPES.SERVER, status: response.status };
+                }
+
+                return await response.json();
+            } catch (error) {
+                clearTimeout(timeoutId);
+
+                // 判断错误类型
+                if (error.name === 'AbortError') {
+                    lastError = { type: ERROR_TYPES.TIMEOUT, message: ERROR_MESSAGES.timeout };
+                } else if (error.type === ERROR_TYPES.SERVER) {
+                    lastError = { type: ERROR_TYPES.SERVER, message: ERROR_MESSAGES.server, status: error.status };
+                } else if (!navigator.onLine) {
+                    lastError = { type: ERROR_TYPES.NETWORK, message: ERROR_MESSAGES.network };
+                    break; // 离线不重试
+                } else {
+                    lastError = { type: ERROR_TYPES.UNKNOWN, message: ERROR_MESSAGES.unknown };
+                }
+
+                console.warn(`API attempt ${attempt}/${maxRetries} failed for ${endpoint}:`, error);
+
+                // 最后一次尝试失败
+                if (attempt === maxRetries) {
+                    break;
+                }
+
+                // 等待后重试
+                await new Promise(r => setTimeout(r, 1000 * attempt));
             }
-
-            return await response.json();
-        } catch (error) {
-            console.error(`API fetch failed for ${endpoint}:`, error);
-            throw error;
         }
+
+        // 抛出用户友好的错误
+        const friendlyError = new Error(lastError.message);
+        friendlyError.type = lastError.type;
+        friendlyError.userMessage = lastError.message;
+        throw friendlyError;
     }
 
     /**
@@ -49,13 +106,37 @@ const TrendAPI = (function () {
             return { ...cached, fromCache: true };
         }
 
-        // 发起请求
-        const data = await fetchAPI(endpoint, params);
+        try {
+            // 发起请求
+            const data = await fetchAPI(endpoint, params);
 
-        // 存入缓存
-        setCachedData(cacheKey, data);
+            // 存入缓存
+            setCachedData(cacheKey, data);
 
-        return data;
+            return data;
+        } catch (error) {
+            // 如果有过期缓存，网络失败时返回过期数据
+            const expiredCache = getExpiredCache(cacheKey);
+            if (expiredCache) {
+                console.warn('Using expired cache due to network error');
+                return { ...expiredCache, fromCache: true, stale: true };
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * 获取过期缓存（用于网络失败时的备用）
+     */
+    function getExpiredCache(key) {
+        try {
+            const item = localStorage.getItem(key);
+            if (!item) return null;
+            const { data } = JSON.parse(item);
+            return data;
+        } catch (e) {
+            return null;
+        }
     }
 
     /**
