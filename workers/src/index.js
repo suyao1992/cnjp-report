@@ -24,6 +24,55 @@ const CACHE_TTL = {
     sync_status: 600      // 同步状态：10分钟
 };
 
+// 重试配置
+const RETRY_CONFIG = {
+    maxAttempts: 3,
+    baseDelayMs: 1000,
+    maxDelayMs: 5000
+};
+
+// ==================== 工具函数 ====================
+
+/**
+ * 带重试的 fetch 请求
+ */
+async function fetchWithRetry(url, options = {}, config = RETRY_CONFIG) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return response;
+        } catch (error) {
+            lastError = error;
+            console.warn(`Fetch attempt ${attempt}/${config.maxAttempts} failed:`, error.message);
+
+            if (attempt < config.maxAttempts) {
+                const delay = Math.min(
+                    config.baseDelayMs * Math.pow(2, attempt - 1),
+                    config.maxDelayMs
+                );
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
+    }
+
+    throw lastError;
+}
+
 // ==================== 主入口 ====================
 
 export default {
@@ -159,11 +208,21 @@ function getNextSyncTime() {
 }
 
 async function handleIndicatorsList(env) {
-    const db = env.DB;
+    const cacheKey = 'indicators:list';
 
+    // 尝试从缓存获取
+    const cached = await getFromCache(env, cacheKey);
+    if (cached) {
+        return jsonResponse({ success: true, data: cached, fromCache: true });
+    }
+
+    const db = env.DB;
     const indicators = await db.prepare(
         'SELECT * FROM indicators ORDER BY category, id'
     ).all();
+
+    // 写入缓存（1天）
+    await saveToCache(env, cacheKey, indicators.results, CACHE_TTL.indicators);
 
     return jsonResponse({
         success: true,
@@ -390,6 +449,7 @@ async function runDataSync(env) {
     let recordsAdded = 0;
     let recordsUpdated = 0;
     let indicatorsUpdated = 0;
+    let failedIndicators = 0;
     let errorMessage = null;
 
     try {
@@ -406,6 +466,7 @@ async function runDataSync(env) {
                 }
             } catch (e) {
                 console.error(`Error syncing ${indicator.id}:`, e.message);
+                failedIndicators++;
             }
         }
 
@@ -418,6 +479,7 @@ async function runDataSync(env) {
         // 清除缓存
         if (env.CACHE) {
             await env.CACHE.delete('dashboard:overview');
+            await env.CACHE.delete('indicators:list');
         }
 
     } catch (error) {
@@ -425,9 +487,18 @@ async function runDataSync(env) {
         console.error('Sync error:', error);
     }
 
-    // 更新同步日志
+    // 更新同步日志 - 改进状态判断
     const endTime = new Date();
-    const status = errorMessage ? 'failed' : 'success';
+    let status;
+    if (errorMessage) {
+        status = 'failed';
+    } else if (failedIndicators > 0 && indicatorsUpdated > 0) {
+        status = 'partial';  // 部分成功
+    } else if (failedIndicators > 0 && indicatorsUpdated === 0) {
+        status = 'failed';
+    } else {
+        status = 'success';
+    }
 
     await db.prepare(`
         UPDATE sync_logs 
@@ -440,13 +511,14 @@ async function runDataSync(env) {
         WHERE id = ?
     `).bind(status, indicatorsUpdated, recordsAdded, recordsUpdated, errorMessage, endTime.toISOString(), logId).run();
 
-    console.log(`Sync completed: ${status}, ${recordsAdded} added, ${recordsUpdated} updated`);
+    console.log(`Sync completed: ${status}, ${recordsAdded} added, ${recordsUpdated} updated, ${failedIndicators} failed`);
 
     return {
         status,
         indicatorsUpdated,
         recordsAdded,
         recordsUpdated,
+        failedIndicators,
         duration: endTime - startTime
     };
 }
