@@ -31,6 +31,27 @@ const RETRY_CONFIG = {
     maxDelayMs: 5000
 };
 
+// e-stat API 统计表ID映射
+// 这些ID需要从 e-stat.go.jp 查找对应数据集
+const ESTAT_STATS_IDS = {
+    // 消费者物价指数（総務省統計局）
+    cpi_total: {
+        statsDataId: '0003143513',  // 消費者物価指数 全国 総合
+        parseType: 'cpi'
+    },
+    // 完全失業率（総務省統計局 労働力調査）
+    unemployment_rate: {
+        statsDataId: '0003015885',  // 労働力調査 完全失業率
+        parseType: 'rate'
+    },
+    // 有効求人倍率（厚生労働省）
+    job_ratio: {
+        statsDataId: '0003026005',  // 一般職業紹介状況 有効求人倍率
+        parseType: 'ratio'
+    }
+    // 留学生数据来自 JASSO，不在 e-stat 上，保持静态数据
+};
+
 // ==================== 工具函数 ====================
 
 /**
@@ -524,18 +545,32 @@ async function runDataSync(env) {
 }
 
 async function syncIndicator(env, db, indicator) {
-    // 暂时使用硬编码数据初始化
-    // TODO: 实现真正的 e-stat API 调用
+    let data = [];
 
-    const staticData = getStaticData(indicator.id);
-    if (!staticData || staticData.length === 0) {
+    // 尝试从真实 e-stat API 获取数据
+    const estatConfig = ESTAT_STATS_IDS[indicator.id];
+    if (estatConfig && env.ESTAT_APP_ID) {
+        try {
+            console.log(`Fetching ${indicator.id} from e-stat API...`);
+            data = await fetchEstatData(env, estatConfig);
+            console.log(`Fetched ${data.length} records for ${indicator.id}`);
+        } catch (e) {
+            console.warn(`e-stat API failed for ${indicator.id}, using static data:`, e.message);
+            data = getStaticData(indicator.id);
+        }
+    } else {
+        // 没有配置 appId 或该指标不在 e-stat 上，使用静态数据
+        data = getStaticData(indicator.id);
+    }
+
+    if (!data || data.length === 0) {
         return { added: 0, updated: 0 };
     }
 
     let added = 0;
     let updated = 0;
 
-    for (const record of staticData) {
+    for (const record of data) {
         // 检查是否已存在
         const existing = await db.prepare(`
             SELECT id, value FROM time_series 
@@ -568,6 +603,81 @@ async function syncIndicator(env, db, indicator) {
     }
 
     return { added, updated };
+}
+
+/**
+ * 从 e-stat API 获取数据
+ */
+async function fetchEstatData(env, config) {
+    const { statsDataId, parseType } = config;
+    const appId = env.ESTAT_APP_ID;
+    const baseUrl = env.ESTAT_API_BASE || 'https://api.e-stat.go.jp/rest/3.0/app';
+
+    // 获取最近2年的数据
+    const url = `${baseUrl}/json/getStatsData?appId=${appId}&statsDataId=${statsDataId}&lang=J&limit=24`;
+
+    const response = await fetchWithRetry(url);
+    const json = await response.json();
+
+    // 检查 API 响应状态
+    if (json.GET_STATS_DATA?.RESULT?.STATUS !== 0) {
+        const errorMsg = json.GET_STATS_DATA?.RESULT?.ERROR_MSG || 'Unknown error';
+        throw new Error(`e-stat API error: ${errorMsg}`);
+    }
+
+    return parseEstatResponse(json, parseType);
+}
+
+/**
+ * 解析 e-stat API 响应
+ */
+function parseEstatResponse(json, parseType) {
+    const data = [];
+
+    try {
+        const statData = json.GET_STATS_DATA?.STATISTICAL_DATA;
+        if (!statData?.DATA_INF?.VALUE) {
+            return data;
+        }
+
+        const values = statData.DATA_INF.VALUE;
+        const classInfo = statData.CLASS_INF?.CLASS_OBJ || [];
+
+        // 找到时间分类
+        const timeClass = classInfo.find(c => c['@id'] === 'time' || c['@id']?.includes('時間'));
+
+        for (const item of values) {
+            // 提取时间标签
+            const timeCode = item['@time'] || item['@cat01'];
+            if (!timeCode) continue;
+
+            // 转换为标准格式 (YYYY-MM 或 YYYY)
+            let period = timeCode;
+            if (timeCode.match(/^\d{6}$/)) {
+                // 200001 -> 2000-01
+                period = `${timeCode.slice(0, 4)}-${timeCode.slice(4, 6)}`;
+            } else if (timeCode.match(/^\d{4}$/)) {
+                period = timeCode;
+            }
+
+            // 提取数值
+            const value = parseFloat(item.$);
+            if (isNaN(value)) continue;
+
+            data.push({
+                period,
+                value: parseType === 'cpi' ? value : value  // CPI 原值，其他指标也是原值
+            });
+        }
+
+        // 按时间排序
+        data.sort((a, b) => a.period.localeCompare(b.period));
+
+    } catch (e) {
+        console.error('Error parsing e-stat response:', e);
+    }
+
+    return data;
 }
 
 // 静态数据（真实官方数据，用于初始化）
