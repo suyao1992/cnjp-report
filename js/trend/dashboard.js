@@ -211,6 +211,9 @@
             renderMetricCard('cpi', cpi);
             renderMetricCard('jobs', jobs);
 
+            // 渲染宏观经济指标
+            await renderMacroIndicators();
+
             // 渲染详细图表
             renderStudentsCharts(students);
             renderVisaCharts(visa);
@@ -220,6 +223,61 @@
         } catch (error) {
             console.error('Failed to load data:', error);
             showError('数据加载失败，请稍后重试');
+        }
+    }
+
+    /**
+     * 渲染宏观经济指标
+     */
+    async function renderMacroIndicators() {
+        try {
+            // 从 API 获取宏观数据
+            const response = await fetch('https://estat-api.suyao1992.workers.dev/api/v1/dashboard/overview');
+            const result = await response.json();
+
+            if (result.success && result.data?.indicators) {
+                const indicators = result.data.indicators;
+
+                // GDP 增长率
+                const gdpEl = document.getElementById('gdpValue');
+                if (gdpEl) {
+                    // 使用静态数据（API暂未包含GDP）
+                    gdpEl.textContent = '+0.3';
+                }
+
+                // 日本总人口
+                const popEl = document.getElementById('populationValue');
+                if (popEl) {
+                    popEl.textContent = '12,378';
+                }
+
+                // 外国人住民
+                const foreignEl = document.getElementById('foreignResidentsValue');
+                if (foreignEl) {
+                    foreignEl.textContent = '341';
+                }
+
+                // 失业率
+                const unemployEl = document.getElementById('unemploymentValue');
+                if (unemployEl && indicators.unemployment_rate) {
+                    unemployEl.textContent = indicators.unemployment_rate.value;
+                } else if (unemployEl) {
+                    unemployEl.textContent = '2.5';
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load macro indicators:', error);
+
+            // 使用静态数据作为后备
+            const gdpEl = document.getElementById('gdpValue');
+            const popEl = document.getElementById('populationValue');
+            const foreignEl = document.getElementById('foreignResidentsValue');
+            const unemployEl = document.getElementById('unemploymentValue');
+
+            if (gdpEl) gdpEl.textContent = '+0.3';
+            if (popEl) popEl.textContent = '12,378';
+            if (foreignEl) foreignEl.textContent = '341';
+            if (unemployEl) unemployEl.textContent = '2.5';
         }
     }
 

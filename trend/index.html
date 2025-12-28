@@ -154,6 +154,68 @@
                     </div>
                 </div>
 
+                <!-- 宏观经济指标 -->
+                <div class="macro-section">
+                    <h3 class="macro-title">📈 日本宏观经济</h3>
+                    <div class="macro-grid">
+                        <!-- GDP增长率 -->
+                        <div class="macro-card">
+                            <div class="macro-icon">📊</div>
+                            <div class="macro-content">
+                                <span class="macro-label">GDP增长率</span>
+                                <span class="macro-value" id="gdpValue">--</span>
+                                <span class="macro-unit">%</span>
+                            </div>
+                            <div class="macro-change" id="gdpChange">
+                                <span class="arrow">--</span>
+                                <span class="period">Q3 2024</span>
+                            </div>
+                        </div>
+
+                        <!-- 日本总人口 -->
+                        <div class="macro-card">
+                            <div class="macro-icon">👥</div>
+                            <div class="macro-content">
+                                <span class="macro-label">日本总人口</span>
+                                <span class="macro-value" id="populationValue">--</span>
+                                <span class="macro-unit">万人</span>
+                            </div>
+                            <div class="macro-change negative" id="populationChange">
+                                <span class="arrow">↓</span>
+                                <span class="trend">持续减少</span>
+                            </div>
+                        </div>
+
+                        <!-- 外国人住民 -->
+                        <div class="macro-card">
+                            <div class="macro-icon">🌏</div>
+                            <div class="macro-content">
+                                <span class="macro-label">外国人住民</span>
+                                <span class="macro-value" id="foreignResidentsValue">--</span>
+                                <span class="macro-unit">万人</span>
+                            </div>
+                            <div class="macro-change positive" id="foreignChange">
+                                <span class="arrow">↑</span>
+                                <span class="trend">历史新高</span>
+                            </div>
+                        </div>
+
+                        <!-- 失业率 -->
+                        <div class="macro-card">
+                            <div class="macro-icon">📉</div>
+                            <div class="macro-content">
+                                <span class="macro-label">完全失业率</span>
+                                <span class="macro-value" id="unemploymentValue">--</span>
+                                <span class="macro-unit">%</span>
+                            </div>
+                            <div class="macro-change neutral" id="unemploymentChange">
+                                <span class="arrow">→</span>
+                                <span class="trend">保持平稳</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 快捷入口 -->
                 <div class="quick-links">
                     <a href="#students" class="quick-link">
