@@ -598,7 +598,7 @@ const ChartConfigs = {
                     show: true,
                     position: 'top',
                     formatter: function (params) {
-                        const labels = ['首脑会谈\n(APEC利马)', '岩屋毅访华\n+5', '高市言论\n-30', '磋商失败\n(历史低点)'];
+                        const labels = ['中日首脑\n会谈', '岩屋外相\n访华', '高市大臣\n发言', '外交磋商\n未果'];
                         return labels[params.dataIndex];
                     },
                     color: '#8b949e',
