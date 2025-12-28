@@ -52,6 +52,13 @@ const ESTAT_STATS_IDS = {
     // 留学生数据来自 JASSO，不在 e-stat 上，保持静态数据
 };
 
+// World Bank 指标映射
+const WORLD_BANK_INDICATORS = {
+    gdp_growth: 'NY.GDP.MKTP.KD.ZG',
+    cpi: 'FP.CPI.TOTL.ZG',
+    unemployment: 'SL.UEM.TOTL.ZS'
+};
+
 // ==================== 工具函数 ====================
 
 /**
@@ -150,7 +157,12 @@ async function handleRequest(pathname, env, params) {
         return handleIndicatorLatest(env, indicatorId);
     }
 
-    // 兼容旧 API
+    // 中日宏观对比 API (World Bank)
+    if (pathname.startsWith('/api/v1/macro/comparison/')) {
+        const indicator = pathname.replace('/api/v1/macro/comparison/', '');
+        return handleMacroComparison(env, indicator);
+    }
+
     if (pathname === '/api/stats/students') {
         return handleLegacyStudents(env);
     }
@@ -751,6 +763,87 @@ function getStaticData(indicatorId) {
     };
 
     return data[indicatorId] || [];
+}
+
+// ==================== World Bank API 处理 ====================
+
+async function handleMacroComparison(env, indicator) {
+    // 验证指标
+    const wbIndicatorCode = WORLD_BANK_INDICATORS[indicator];
+    if (!wbIndicatorCode) {
+        return jsonResponse({
+            success: false,
+            error: 'Invalid indicator. Valid indicators: gdp_growth, cpi, unemployment'
+        }, 400);
+    }
+
+    // 检查缓存
+    const cacheKey = `wb:${indicator}:v2`; // Update cache key version
+    const cached = await getFromCache(env, cacheKey);
+    if (cached) {
+        return jsonResponse({
+            success: true,
+            data: cached,
+            fromCache: true
+        });
+    }
+
+    try {
+        // 并行获取中国和日本的数据
+        const [chinaData, japanData] = await Promise.all([
+            fetchWorldBankData('CHN', wbIndicatorCode),
+            fetchWorldBankData('JPN', wbIndicatorCode)
+        ]);
+
+        const result = {
+            china: chinaData,
+            japan: japanData,
+            indicator: indicator,
+            source: 'World Bank'
+        };
+
+        // 缓存1天
+        await saveToCache(env, cacheKey, result, 86400);
+
+        return jsonResponse({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error('World Bank API error:', error);
+        return jsonResponse({
+            success: false,
+            error: 'Failed to fetch World Bank data: ' + error.message
+        }, 500);
+    }
+}
+
+async function fetchWorldBankData(countryCode, indicatorCode) {
+    const baseUrl = 'https://api.worldbank.org/v2';
+    // Update to 2025
+    const url = `${baseUrl}/country/${countryCode}/indicator/${indicatorCode}?format=json&per_page=100&date=1990:2025`;
+
+    const response = await fetchWithRetry(url);
+    const json = await response.json();
+
+    // World Bank 响应格式: [metadata, data]
+    if (!json || !Array.isArray(json) || json.length < 2) {
+        throw new Error('Invalid World Bank response format');
+    }
+
+    const dataArray = json[1];
+    if (!dataArray || !Array.isArray(dataArray)) {
+        return [];
+    }
+
+    // 转换为标准格式并过滤null值
+    return dataArray
+        .filter(item => item.value !== null && item.value !== undefined)
+        .map(item => ({
+            year: parseInt(item.date),
+            value: parseFloat(item.value)
+        }))
+        .sort((a, b) => a.year - b.year);
 }
 
 // ==================== 缓存工具 ====================

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中日宏观对比洞察 | Comparison Insight</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/trend.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        /* Specific styles for macro comparison page */
+        .macro-hero {
+            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .macro-title {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #e74c3c, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            color: #8b949e;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            transition: color 0.3s;
+        }
+
+        .home-link:hover {
+            color: #58a6ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="macro-hero">
+        <div class="container">
+            <a href="index.html" class="home-link">← 返回看板首页</a>
+            <h1 class="macro-title">中日宏观对比洞察</h1>
+            <p class="section-desc">基于 World Bank 官方数据 (1990-2024)</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="charts-grid">
+            <!-- GDP 对比 -->
+            <div class="chart-container large">
+                <div class="chart-header">
+                    <h3 class="chart-title">GDP 增长率对比 (Annual Growth %)</h3>
+                    <span class="precision-badge official">World Bank</span>
+                </div>
+                <div class="chart-body" id="chartMacroGDP"></div>
+                <div class="chart-footer">
+                    <span class="legend-item"><span class="legend-dot" style="background:#e74c3c"></span>中国</span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#3498db"></span>日本</span>
+                </div>
+            </div>
+
+            <!-- CPI 对比 -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">通胀率 (CPI) 对比</h3>
+                </div>
+                <div class="chart-body" id="chartMacroCPI"></div>
+            </div>
+
+            <!-- 失业率对比 -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">失业率对比 (% Labor Force)</h3>
+                </div>
+                <div class="chart-body" id="chartMacroUnemployment"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: #8b949e; margin-top: 3rem;">
+        <p>Data Source: World Bank Open Data API</p>
+    </footer>
+
+    <script src="../js/trend/api.js"></script>
+    <script src="../js/trend/macro.js"></script>
+</body>
+
+</html>

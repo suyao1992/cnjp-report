@@ -209,6 +209,14 @@ const TrendAPI = (function () {
         },
 
         /**
+         * 获取中日宏观对比数据 (World Bank)
+         * @param {string} indicator - 'gdp_growth', 'cpi', 'unemployment'
+         */
+        getMacroComparison: async function (indicator) {
+            return await fetchWithCache(`/api/v1/macro/comparison/${indicator}`);
+        },
+
+        /**
          * 获取单个指标最新值
          */
         getIndicator: async function (indicatorId) {
