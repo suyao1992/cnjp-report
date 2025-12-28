@@ -154,11 +154,18 @@ function initNavigation() {
     window.addEventListener('scroll', updateActiveLink);
     updateActiveLink();
 
-    // 平滑滚动
+    // 平滑滚动（仅对锚点链接生效）
     navLinks.forEach(link => {
         link.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+
+            // 如果是外部链接或页面链接（非锚点），不拦截
+            if (!href.startsWith('#')) {
+                return; // 让浏览器正常处理
+            }
+
             e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
+            const targetId = href.substring(1);
             const targetSection = document.getElementById(targetId);
             if (targetSection) {
                 window.scrollTo({
